@@ -13,6 +13,16 @@ FetchContent_Declare(SFML
     SYSTEM)
 FetchContent_MakeAvailable(SFML)
 
+set(FONT_DIR ${CMAKE_SOURCE_DIR}/assets/font)
+set(FONT_FILE pong-score.ttf)
+
+add_custom_target(copy_fonts ALL
+    COMMAND ${CMAKE_COMMAND} -E copy ${FONT_DIR}/${FONT_FILE} ${CMAKE_BINARY_DIR}/${FONT_FILE}
+    COMMENT "Copying font to build directory"
+)
+
+add_compile_definitions(FONT_PATH="${CMAKE_BINARY_DIR}/${FONT_FILE}")
+
 add_executable(main src/main.cpp)
 target_link_libraries(main PRIVATE sfml-graphics)
 target_compile_features(main PRIVATE cxx_std_17)
