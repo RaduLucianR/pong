@@ -3,6 +3,33 @@
 #include <iostream>
 #include <string>
 
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
+
+float vlen(sf::Vector2f v)
+{
+    return sqrt(v.x * v.x + v.y * v.y);
+}
+
+float dot(sf::Vector2f v1, sf::Vector2f v2)
+{
+    return v1.x * v2.x + v1.y * v2.y;
+}
+
+float rand_float(float lo, float hi)
+{
+    int minus = rand() % 2;
+    int sign = minus ? (-1) : 1;
+    float r = lo + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(hi - lo)));
+    return sign * r;
+}
+
+sf::Vector2f rand_ball_vel()
+{
+    return sf::Vector2f(rand_float(2.0, 3.0), rand_float(0.3, 2.3));
+}
+
 int main()
 {   
     sf::Font font;
@@ -12,6 +39,8 @@ int main()
         std::cout << "Cannot load Pong font!" << std::endl;
         return EXIT_FAILURE;
     }
+
+    srand(time(0));
 
     auto width = 1080u;
     auto height = 720u;
@@ -24,11 +53,13 @@ int main()
     float dash_space = 12;
     int nrof_dashes = (int) height / (dash_height + dash_space);
     sf::Vector2f init_ball_pos(width / 2, height / 2);
-    sf::Vector2f init_ball_vel(1, 0.4);
+    sf::Vector2f init_ball_vel(rand_ball_vel());
     sf::Vector2f ball_velocity = init_ball_vel;
     sf::Vector2f playerSize(10.f, 40.f);
     sf::Vector2f player1Pos(init_p1_x, init_player_y);
     sf::Vector2f player2Pos(init_p2_x, init_player_y);
+    sf::Vector2f player1Vel(0, 3);
+    sf::Vector2f player2Vel(0, 3);
     sf::RectangleShape player1(playerSize);
     sf::RectangleShape player2(playerSize);
     sf::RectangleShape ball(sf::Vector2f(10.f, 10.f));
@@ -72,6 +103,7 @@ int main()
     sf::FloatRect ballBounds = ball.getGlobalBounds();
     float player1Bottom = player1Bounds.top + player1Bounds.height;
     float player2Bottom = player2Bounds.top + player2Bounds.height;
+    float ballBottom = ballBounds.top + ballBounds.height;
 
     while (window.isOpen())
     {
@@ -88,13 +120,17 @@ int main()
         player1Bounds = player1.getGlobalBounds();
         player2Bounds = player2.getGlobalBounds();
         ballBounds = ball.getGlobalBounds();
+        player1Bottom = player1Bounds.top + player1Bounds.height;
         player2Bottom = player2Bounds.top + player2Bounds.height;
+        ballBottom = ballBounds.top + ballBounds.height;
+        
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
         {
             if (player1Bounds.top > 0)
             {
-                player1.move(0, -3);
+                player1Vel.y = -3;
+                player1.move(player1Vel);
             }
         }
 
@@ -105,7 +141,8 @@ int main()
 
             if (player1Bottom < curr_window_size.y)
             {
-                player1.move(0, 3);
+                player1Vel.y = 3;
+                player1.move(player1Vel);
             }
         }
 
@@ -113,7 +150,8 @@ int main()
         {
             if (player2Bounds.top > 0)
             {
-                player2.move(0, -3);
+                player2Vel.y = -3;
+                player2.move(player2Vel);
             }
         }
 
@@ -124,15 +162,19 @@ int main()
 
             if (player2Bottom < curr_window_size.y)
             {
-                player2.move(0, 3);
+                player2Vel.y = 3;
+                player2.move(player2Vel);
             }
         }
 
-        if (player1Bounds.intersects(ballBounds) ||
-            player2Bounds.intersects(ballBounds)
-        )
+        if (player1Bounds.intersects(ballBounds))
         {
-            ball_velocity.x *= -1;
+            ball_velocity.x *= -1.1;
+        }
+
+        if (player2Bounds.intersects(ballBounds))
+        {
+            ball_velocity.x *= -1.1;
         }
 
         // Round is over, Player 2 wins
@@ -141,7 +183,7 @@ int main()
             player1.setPosition(init_p1_x, init_player_y);
             player2.setPosition(init_p2_x, init_player_y);
             ball.setPosition(init_ball_pos);
-            ball_velocity = init_ball_vel;
+            ball_velocity = rand_ball_vel();
             score2 += 1;
             scorePlayer2.setString(std::to_string(score2));
         }
@@ -152,14 +194,14 @@ int main()
             player1.setPosition(init_p1_x, init_player_y);
             player2.setPosition(init_p2_x, init_player_y);
             ball.setPosition(init_ball_pos);
-            ball_velocity = init_ball_vel;
+            ball_velocity = rand_ball_vel();
             score1 += 1;
             scorePlayer1.setString(std::to_string(score1));
         }
 
         // Bounce off window top or bottom
         if (curr_ball_pos.y < 0 || 
-            curr_ball_pos.y > (float) curr_window_size.y
+            ballBottom > (float) curr_window_size.y
         )
         {
             ball_velocity.y *= -1;
